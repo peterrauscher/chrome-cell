@@ -1,0 +1,40 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: chrome-cell
+  labels:
+    app.kubernetes.io/name: chrome-cell
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: chrome-cell
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Live view from anywhere you can reach the NodePort / ingress.
+    - ports:
+        - protocol: TCP
+          port: 3000
+        - protocol: TCP
+          port: 3001
+    # CDP only from pods labeled as a harness broker.
+    - from:
+        - podSelector:
+            matchLabels:
+              chrome-cell.access/cdp: "true"
+      ports:
+        - protocol: TCP
+          port: 9223
+    # Same-namespace peers (optional intra-pool tools).
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: chrome-cell
+      ports:
+        - protocol: TCP
+          port: 9223
+  egress:
+    # Browser cells need open egress. Replace this with an allowlist
+    # if you only want the pool to hit known sites.
+    - {}

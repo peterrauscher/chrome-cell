@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: chrome-cell
+  labels:
+    app.kubernetes.io/name: chrome-cell
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/name: chrome-cell
+  ports:
+    - name: ui-http
+      port: 3000
+      targetPort: ui-http
+    - name: ui-https
+      port: 3001
+      targetPort: ui-https
+    - name: cdp
+      port: 9223
+      targetPort: cdp

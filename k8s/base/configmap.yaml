@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chrome-cell
+  labels:
+    app.kubernetes.io/name: chrome-cell
+data:
+  TZ: America/Los_Angeles
+  TITLE: chrome-cell
+  LAUNCH_URL: about:blank
+  CHROME_SANDBOX: "0"
+  CHROME_PROFILE_DIR: /config/chrome
+  CDP_PORT: "9222"
+  CDP_PROXY_PORT: "9223"
+  # Space-separated extra Chrome flags. Keep empty unless you need them.
+  CHROME_FLAGS: ""

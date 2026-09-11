@@ -1,0 +1,16 @@
+# ClusterIP only. Point your harness broker at:
+#   chrome-cell-0.chrome-cell.chrome-cell.svc.cluster.local:9223
+apiVersion: v1
+kind: Service
+metadata:
+  name: chrome-cell-cdp
+  labels:
+    app.kubernetes.io/name: chrome-cell
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: chrome-cell
+  ports:
+    - name: cdp
+      port: 9223
+      targetPort: cdp
