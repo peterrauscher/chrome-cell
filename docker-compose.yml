@@ -1,0 +1,21 @@
+services:
+  chrome-cell:
+    build: .
+    image: ghcr.io/peterrauscher/chrome-cell:local
+    shm_size: "1gb"
+    security_opt:
+      - seccomp=unconfined
+    ports:
+      - "3001:3001"
+      - "127.0.0.1:9223:9223"
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: America/Los_Angeles
+      LAUNCH_URL: about:blank
+      TITLE: chrome-cell
+    volumes:
+      - ./config:/config
+    devices:
+      - /dev/dri:/dev/dri
+    restart: unless-stopped

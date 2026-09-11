@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: chrome-cell
+spec:
+  template:
+    spec:
+      containers:
+        - name: chrome
+          env:
+            - name: CUSTOM_USER
+              value: abc
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: chrome-cell-ui
+                  key: PASSWORD

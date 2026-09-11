@@ -1,0 +1,85 @@
+# One NodePort per cell so you can open live view from the LAN
+# without an ingress controller.
+#   https://<node-ip>:30010  → chrome-cell-0
+#   https://<node-ip>:30011  → chrome-cell-1
+#   ...
+# CDP stays ClusterIP / headless. Do not NodePort 9223.
+apiVersion: v1
+kind: Service
+metadata:
+  name: chrome-cell-0-ui
+  labels:
+    app.kubernetes.io/name: chrome-cell
+spec:
+  type: NodePort
+  selector:
+    statefulset.kubernetes.io/pod-name: chrome-cell-0
+  ports:
+    - name: ui-https
+      port: 3001
+      targetPort: ui-https
+      nodePort: 30010
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chrome-cell-1-ui
+  labels:
+    app.kubernetes.io/name: chrome-cell
+spec:
+  type: NodePort
+  selector:
+    statefulset.kubernetes.io/pod-name: chrome-cell-1
+  ports:
+    - name: ui-https
+      port: 3001
+      targetPort: ui-https
+      nodePort: 30011
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chrome-cell-2-ui
+  labels:
+    app.kubernetes.io/name: chrome-cell
+spec:
+  type: NodePort
+  selector:
+    statefulset.kubernetes.io/pod-name: chrome-cell-2
+  ports:
+    - name: ui-https
+      port: 3001
+      targetPort: ui-https
+      nodePort: 30012
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chrome-cell-3-ui
+  labels:
+    app.kubernetes.io/name: chrome-cell
+spec:
+  type: NodePort
+  selector:
+    statefulset.kubernetes.io/pod-name: chrome-cell-3
+  ports:
+    - name: ui-https
+      port: 3001
+      targetPort: ui-https
+      nodePort: 30013
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chrome-cell-4-ui
+  labels:
+    app.kubernetes.io/name: chrome-cell
+spec:
+  type: NodePort
+  selector:
+    statefulset.kubernetes.io/pod-name: chrome-cell-4
+  ports:
+    - name: ui-https
+      port: 3001
+      targetPort: ui-https
+      nodePort: 30014
