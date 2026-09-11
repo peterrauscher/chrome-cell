@@ -1,0 +1,11 @@
+.git
+.github
+k8s
+docs
+examples
+*.md
+LICENSE
+Makefile
+docker-compose.yml
+.gitignore
+.DS_Store

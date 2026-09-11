@@ -1,0 +1,8 @@
+.DS_Store
+*.swp
+.env
+.env.*
+!.env.example
+/config/
+/data/
+*.tar

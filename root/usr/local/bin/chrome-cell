@@ -1,0 +1,32 @@
+#!/bin/bash
+set -euo pipefail
+
+PROFILE="${CHROME_PROFILE_DIR:-/config/chrome}"
+mkdir -p "${PROFILE}"
+
+PORT="${CDP_PORT:-9222}"
+URL="${LAUNCH_URL:-about:blank}"
+
+SANDBOX_ARGS=(--no-sandbox --disable-setuid-sandbox)
+if [ "${CHROME_SANDBOX:-0}" = "1" ]; then
+  SANDBOX_ARGS=()
+fi
+
+# Word-split extra flags from the environment. Intended for operators, not page content.
+# shellcheck disable=SC2206
+EXTRA_ARGS=( ${CHROME_FLAGS:-} )
+
+exec /usr/local/bin/chrome-bin \
+  --user-data-dir="${PROFILE}" \
+  --remote-debugging-port="${PORT}" \
+  --remote-debugging-address=127.0.0.1 \
+  --remote-allow-origins=* \
+  --no-first-run \
+  --no-default-browser-check \
+  --disable-session-crashed-bubble \
+  --hide-crash-restore-bubble \
+  --password-store=basic \
+  --start-maximized \
+  "${SANDBOX_ARGS[@]}" \
+  "${EXTRA_ARGS[@]}" \
+  "${URL}"

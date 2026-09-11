@@ -1,0 +1,13 @@
+#!/bin/bash
+# Runs inside the KasmVNC user session.
+set -euo pipefail
+
+PROXY_PORT="${CDP_PROXY_PORT:-9223}"
+CDP_PORT="${CDP_PORT:-9222}"
+
+# Expose loopback CDP to the pod network without binding Chrome to 0.0.0.0.
+if command -v socat >/dev/null 2>&1; then
+  socat TCP-LISTEN:"${PROXY_PORT}",bind=0.0.0.0,reuseaddr,fork TCP:127.0.0.1:"${CDP_PORT}" &
+fi
+
+exec /usr/local/bin/chrome-cell
