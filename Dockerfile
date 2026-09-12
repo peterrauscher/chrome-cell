@@ -39,7 +39,7 @@ RUN set -eux; \
 
 COPY root/ /
 
-RUN chmod +x /usr/local/bin/chrome-cell /defaults/autostart
+RUN chmod +x /usr/local/bin/chrome-cell /defaults/autostart /custom-cont-init.d/50-cell-subfolder
 
 # LSIO web UI: 3000/http 3001/https
 # Chrome CDP: 9222 loopback only

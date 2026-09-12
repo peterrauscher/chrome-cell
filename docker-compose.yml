@@ -2,6 +2,7 @@ services:
   chrome-cell:
     build: .
     image: ghcr.io/peterrauscher/chrome-cell:local
+    hostname: chrome-cell
     shm_size: "1gb"
     security_opt:
       - seccomp=unconfined
@@ -16,6 +17,18 @@ services:
       TITLE: chrome-cell
     volumes:
       - ./config:/config
-    devices:
-      - /dev/dri:/dev/dri
+    restart: unless-stopped
+
+  gateway:
+    build: ./gateway
+    image: ghcr.io/peterrauscher/chrome-cell-gateway:local
+    ports:
+      - "8080:8080"
+    environment:
+      NUM_CELLS: "1"
+      CELL_HOST_TEMPLATE: chrome-cell
+      CELL_VNC_PORT: "3000"
+      CELL_CDP_PORT: "9223"
+    depends_on:
+      - chrome-cell
     restart: unless-stopped

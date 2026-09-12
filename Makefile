@@ -6,22 +6,14 @@ PLATFORM ?= linux/amd64
 
 build:
 	docker build --platform=$(PLATFORM) -t $(IMAGE):$(TAG) .
+	docker build --platform=$(PLATFORM) -t $(IMAGE)-gateway:$(TAG) gateway
 
 run:
-	docker run --rm -it \
-	  --name chrome-cell \
-	  --shm-size=1g \
-	  --security-opt seccomp=unconfined \
-	  -p 3001:3001 \
-	  -p 127.0.0.1:9223:9223 \
-	  -e PUID=1000 \
-	  -e PGID=1000 \
-	  -e TZ=America/Los_Angeles \
-	  -v $$(pwd)/config:/config \
-	  $(IMAGE):$(TAG)
+	docker compose up --build
 
 push:
 	docker push $(IMAGE):$(TAG)
+	docker push $(IMAGE)-gateway:$(TAG)
 
 k8s-apply:
 	kubectl apply -k k8s/overlays/homelab
