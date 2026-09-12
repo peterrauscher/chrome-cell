@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>chrome-cell viewport</title>
+  <style>
+    :root { --bg:#101114; --panel:#1a1c21; --line:#2c3038; --text:#e8eaed; --muted:#8b909a; --accent:#7aa2ff; --danger:#ff7b72; --ok:#7ee787; }
+    * { box-sizing: border-box; }
+    html, body { margin:0; height:100%; background:var(--bg); color:var(--text); font:14px/1.4 ui-sans-serif, system-ui, sans-serif; }
+    header { display:flex; align-items:center; gap:12px; padding:10px 16px; border-bottom:1px solid var(--line); background:var(--panel); }
+    header h1 { font-size:14px; font-weight:600; margin:0; }
+    header .sp { flex:1; }
+    select, button { background:#111; color:var(--text); border:1px solid var(--line); border-radius:6px; padding:6px 10px; font:inherit; cursor:pointer; }
+    button.primary { background:var(--accent); color:#0b1020; border-color:transparent; font-weight:600; }
+    button.danger { background:transparent; color:var(--danger); border-color:var(--danger); }
+    .pill { font-size:12px; color:var(--muted); }
+    .pill.human { color:var(--ok); } .pill.agent { color:var(--accent); }
+    main { height:calc(100% - 49px); display:grid; grid-template-columns:1fr; }
+    main.split { grid-template-columns:1fr 1fr; }
+    section { position:relative; min-height:0; background:#000; }
+    section + section { border-left:1px solid var(--line); }
+    section label { position:absolute; top:8px; left:8px; z-index:2; background:#000a; padding:2px 8px; border-radius:4px; font-size:11px; color:var(--muted); }
+    canvas { width:100%; height:100%; display:block; }
+    canvas.live { cursor:crosshair; }
+    iframe { width:100%; height:100%; border:0; background:#000; }
+    .empty { position:absolute; inset:0; display:grid; place-items:center; color:var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>chrome-cell</h1>
+    <select id="cell"></select>
+    <span id="status" class="pill agent">agent</span>
+    <span id="viewers" class="pill"></span>
+    <div class="sp"></div>
+    <button id="desktop">desktop iframe</button>
+    <button id="take" class="primary">take control</button>
+    <button id="give" class="danger">give back</button>
+  </header>
+  <main id="layout">
+    <section>
+      <label>page (CDP screencast)</label>
+      <canvas id="cast"></canvas>
+      <div id="castEmpty" class="empty">connecting…</div>
+    </section>
+    <section id="deskWrap" hidden>
+      <label>desktop (KasmVNC)</label>
+      <iframe id="desk" title="cell desktop"></iframe>
+    </section>
+  </main>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const token = params.get("token") || "";
+    const qs = token ? `?token=${encodeURIComponent(token)}` : "";
+    const cellSel = document.getElementById("cell");
+    const canvas = document.getElementById("cast");
+    const ctx = canvas.getContext("2d");
+    const empty = document.getElementById("castEmpty");
+    const status = document.getElementById("status");
+    const viewers = document.getElementById("viewers");
+    const layout = document.getElementById("layout");
+    const deskWrap = document.getElementById("deskWrap");
+    const desk = document.getElementById("desk");
+    let ws, meta = { deviceWidth: 1280, deviceHeight: 720 }, lock = "agent", cellId = 0;
+    async function boot() {
+      const cells = await (await fetch("/api/cells" + qs)).json();
+      cells.forEach(c => { const o = document.createElement("option"); o.value = c.id; o.textContent = "cell " + c.id; cellSel.appendChild(o); });
+      cellId = Number(params.get("cell") || 0); cellSel.value = String(cellId); connect();
+    }
+    function connect() {
+      if (ws) ws.close();
+      const proto = location.protocol === "https:" ? "wss" : "ws";
+      ws = new WebSocket(`${proto}://${location.host}/cast/${cellId}${qs}`);
+      ws.onmessage = ev => {
+        const msg = JSON.parse(ev.data);
+        if (msg.type === "hello") { setLock(msg.lock); viewers.textContent = msg.viewers + " viewer(s)"; }
+        if (msg.type === "frame") {
+          empty.hidden = true; meta = msg.metadata || meta; setLock(msg.lock);
+          const img = new Image();
+          img.onload = () => { canvas.width = img.width; canvas.height = img.height; ctx.drawImage(img, 0, 0); };
+          img.src = "data:image/jpeg;base64," + msg.data;
+        }
+        if (msg.type === "error") empty.textContent = msg.error;
+      };
+      ws.onclose = () => { empty.hidden = false; empty.textContent = "disconnected"; };
+    }
+    function setLock(next) { lock = next; status.textContent = next; status.className = "pill " + next; canvas.classList.toggle("live", next === "human"); }
+    function send(obj) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(obj)); }
+    function cssPoint(ev) {
+      const r = canvas.getBoundingClientRect();
+      return { x: (ev.clientX - r.left) / r.width * (meta.deviceWidth || canvas.width || 1), y: (ev.clientY - r.top) / r.height * (meta.deviceHeight || canvas.height || 1) };
+    }
+    canvas.addEventListener("mousemove", ev => { if (lock !== "human") return; const p = cssPoint(ev); send({ type:"input", kind:"mouse", event:"mouseMoved", x:p.x, y:p.y, button:"none" }); });
+    canvas.addEventListener("mousedown", ev => { if (lock !== "human") return; ev.preventDefault(); const p = cssPoint(ev); const button = ev.button === 2 ? "right" : ev.button === 1 ? "middle" : "left"; send({ type:"input", kind:"mouse", event:"mousePressed", x:p.x, y:p.y, button, clickCount:1 }); });
+    canvas.addEventListener("mouseup", ev => { if (lock !== "human") return; const p = cssPoint(ev); const button = ev.button === 2 ? "right" : ev.button === 1 ? "middle" : "left"; send({ type:"input", kind:"mouse", event:"mouseReleased", x:p.x, y:p.y, button, clickCount:1 }); });
+    canvas.addEventListener("wheel", ev => { if (lock !== "human") return; ev.preventDefault(); const p = cssPoint(ev); send({ type:"input", kind:"mouse", event:"mouseWheel", x:p.x, y:p.y, deltaX:ev.deltaX, deltaY:ev.deltaY }); }, { passive:false });
+    canvas.addEventListener("contextmenu", ev => ev.preventDefault());
+    window.addEventListener("keydown", ev => { if (lock !== "human") return; send({ type:"input", kind:"key", event:"keyDown", key:ev.key, code:ev.code, text: ev.key.length === 1 ? ev.key : "" }); });
+    window.addEventListener("keyup", ev => { if (lock !== "human") return; send({ type:"input", kind:"key", event:"keyUp", key:ev.key, code:ev.code }); });
+    cellSel.addEventListener("change", () => { cellId = Number(cellSel.value); history.replaceState(null, "", `/?cell=${cellId}`); desk.src = ""; connect(); });
+    document.getElementById("take").onclick = () => send({ type:"lock", holder:"viewport" });
+    document.getElementById("give").onclick = () => send({ type:"unlock" });
+    document.getElementById("desktop").onclick = () => { const on = deskWrap.hidden; deskWrap.hidden = !on; layout.classList.toggle("split", on); if (on) desk.src = `/cells/${cellId}/${qs}`; };
+    boot();
+  </script>
+</body>
+</html>
