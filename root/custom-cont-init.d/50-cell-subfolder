@@ -1,0 +1,13 @@
+#!/bin/bash
+# When running as chrome-cell-N in k8s, publish KasmVNC under /cells/N/
+# so the gateway can reverse-proxy without rewriting HTML.
+set -euo pipefail
+
+NAME="${POD_NAME:-${HOSTNAME:-}}"
+if [[ "${NAME}" =~ chrome-cell-([0-9]+)$ ]]; then
+  SUB="/cells/${BASH_REMATCH[1]}/"
+  echo "[chrome-cell] setting SUBFOLDER=${SUB}"
+  mkdir -p /var/run/s6/container_environment /run/s6/container_environment
+  printf '%s' "${SUB}" > /var/run/s6/container_environment/SUBFOLDER 2>/dev/null || true
+  printf '%s' "${SUB}" > /run/s6/container_environment/SUBFOLDER 2>/dev/null || true
+fi

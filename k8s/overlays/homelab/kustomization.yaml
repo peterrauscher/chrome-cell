@@ -4,15 +4,15 @@ kind: Kustomization
 resources:
   - ../../base
   - nodeports.yaml
+  - gateway-nodeport.yaml
   - secret.example.yaml
 
 patches:
   - path: patch-ui-auth.yaml
+  - path: patch-pod-name.yaml
 
-# Pin the image you actually built. Override at apply time with
-#   kubectl apply -k k8s/overlays/homelab
-# or
-#   kustomize edit set image ghcr.io/peterrauscher/chrome-cell:SHA
 images:
   - name: ghcr.io/peterrauscher/chrome-cell
+    newTag: latest
+  - name: ghcr.io/peterrauscher/chrome-cell-gateway
     newTag: latest

@@ -10,3 +10,4 @@ resources:
   - service-headless.yaml
   - service-cdp.yaml
   - networkpolicy.yaml
+  - gateway.yaml

@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: viewport-gateway
+  labels:
+    app.kubernetes.io/name: viewport-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: viewport-gateway
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: viewport-gateway
+        chrome-cell.access/cdp: "true"
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: gateway
+          image: ghcr.io/peterrauscher/chrome-cell-gateway:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: NUM_CELLS
+              value: "5"
+            - name: CELL_HOST_TEMPLATE
+              value: chrome-cell-{id}.chrome-cell.chrome-cell.svc.cluster.local
+            - name: CELL_VNC_PORT
+              value: "3000"
+            - name: CELL_CDP_PORT
+              value: "9223"
+            - name: VIEWPORT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: chrome-cell-ui
+                  key: VIEWPORT_TOKEN
+                  optional: true
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: viewport-gateway
+  labels:
+    app.kubernetes.io/name: viewport-gateway
+spec:
+  selector:
+    app.kubernetes.io/name: viewport-gateway
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
